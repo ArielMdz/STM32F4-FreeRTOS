@@ -24,7 +24,7 @@ void main(void) {
 
   while (1) {
     GPIOA->ODR ^= (1 << LED_PIN);
-    for (uint32_t i = 0; i < 2000000; i++)
+    for (uint32_t i = 0; i < 1000000; i++)
       ;
     printf("Hello, World!\n");
   }
