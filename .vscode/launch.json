@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug STM32",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/bin/main.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "/usr/share/openocd/scripts/interface/stlink.cfg",
+                "/usr/share/openocd/scripts/target/stm32f4x.cfg"
+            ],
+            "preLaunchTask": "Build",
+            "device": "STM32F446RE",
+            "armToolchainPath": "/usr/bin/",
+            "preLaunchCommands": [
+                "monitor reset halt",
+                "load",
+                "monitor reset init",
+                "monitor reset run"
+            ]
+        }
+    ]
+}

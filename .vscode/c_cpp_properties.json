@@ -1,0 +1,42 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${default}",
+                "${workspaceFolder}/Core/Inc",
+                "${workspaceFolder}/Core/Src",
+                "${workspaceFolder}/Core/Startup",
+                "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
+                "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F4xx/Source/Templates",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Src",
+                "${workspaceFolder}/FreeRTOS/include",
+                "${workspaceFolder}/FreeRTOS/portable/GCC/ARM_CM4F",
+                "${workspaceFolder}/FreeRTOS/portable/MemMang",
+                "${workspaceFolder}/FreeRTOS"
+            ],
+            "defines": [
+                "STM32F446xx",
+                "STM32F4xx",
+                "DEBUG",
+                "USE_HAL_DRIVER"
+            ],
+            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "linux-gcc-arm",
+            "compilerArgs": [
+                "-mcpu=cortex-m4",
+                "-mthumb",
+                "--specs=nano.specs",
+                "-mfloat-abi=hard",
+                "-mfpu=fpv4-sp-d16",
+                "-std=c11",
+                "-g"
+            ]
+        }
+    ],
+    "version": 4
+}

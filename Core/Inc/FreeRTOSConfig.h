@@ -55,7 +55,7 @@ extern uint32_t SystemCoreClock;
 #define configMAX_PRIORITIES (5)
 #define configMINIMAL_STACK_SIZE ((unsigned short)130)
 #define configTOTAL_HEAP_SIZE ((size_t)(75 * 1024))
-#define configMAX_TASK_NAME_LEN (16)
+#define configMAX_TASK_NAME_LEN (10)
 #define configUSE_TRACE_FACILITY 1
 #define configUSE_16_BIT_TICKS 0
 #define configIDLE_SHOULD_YIELD 1
@@ -73,7 +73,7 @@ extern uint32_t SystemCoreClock;
 #define configMAX_CO_ROUTINE_PRIORITIES (2)
 
 /* Software timer definitions. */
-#define configUSE_TIMERS 1
+#define configUSE_TIMERS 0
 #define configTIMER_TASK_PRIORITY (2)
 #define configTIMER_QUEUE_LENGTH 10
 #define configTIMER_TASK_STACK_DEPTH (configMINIMAL_STACK_SIZE * 2)
@@ -132,7 +132,5 @@ standard names. */
 #define vPortSVCHandler SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
 #define xPortSysTickHandler SysTick_Handler
-
-//#include "SEGGER_SYSVIEW_FreeRTOS.h"
 
 #endif /* FREERTOS_CONFIG_H */

@@ -1,13 +1,12 @@
-/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
- * @file           : main.h
- * @brief          : Header for main.c file.
- *                   This file contains the common defines of the application.
+ * @file    Templates/Inc/main.h
+ * @author  MCD Application Team
+ * @brief   Header for main.c module
  ******************************************************************************
  * @attention
  *
- * Copyright (c) 2023 STMicroelectronics.
+ * Copyright (c) 2017 STMicroelectronics.
  * All rights reserved.
  *
  * This software is licensed under terms that can be found in the LICENSE file
@@ -16,22 +15,18 @@
  *
  ******************************************************************************
  */
-/* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H
 #define __MAIN_H
 
-#include "stm32f4xx.h"
-#include "usart.h"
-#include <stdint.h>
-#include <stdio.h>
+/* Includes ------------------------------------------------------------------*/
+#include "stm32f4xx_hal.h"
 
-#define LED 5
-
-volatile uint32_t ticks;
-
-void clock_init();
-void GPIO_Init(void);
+#define LED GPIO_PIN_5
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
 
 #endif /* __MAIN_H */

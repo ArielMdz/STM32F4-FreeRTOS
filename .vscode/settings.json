@@ -1,0 +1,25 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true
+    },
+    "editor.tabSize": 4,
+    "editor.detectIndentation": true,
+    "editor.wordWrap": "on",
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    },
+    "tasks.autoDetect": "on",
+    "tasks.json": {
+        "files.exclude": {
+            "**/.vscode/tasks.json": true
+        }
+    },
+    "files.associations": {
+        "*.md": "markdown",
+        "stm32f4xx_hal.h": "c",
+        "stm32f4xx_hal_conf.h": "c"
+    },
+    "editor.formatOnSave": true
+}

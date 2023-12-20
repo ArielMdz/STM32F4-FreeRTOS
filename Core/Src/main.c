@@ -1,87 +1,203 @@
-#include "stm32f4xx.h"
-#include "usart.h"
-#include <stdint.h>
+/**
+ ******************************************************************************
+ * @file    Templates/Src/main.c
+ * @author  MCD Application Team
+ * @brief   Main program body
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2017 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
+
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
 #include <stdio.h>
 
-#define LED_PIN 5
+/** @addtogroup STM32F4xx_HAL_Examples
+ * @{
+ */
 
-void clock_init();
+/** @addtogroup Templates
+ * @{
+ */
 
-volatile uint32_t ticks;
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function prototypes -----------------------------------------------*/
+static void SystemClock_Config(void);
+static void Error_Handler(void);
+static void GPIO_Init(void);
+static void task1_handler(void *parameters);
+/* Private functions ---------------------------------------------------------*/
 
-void main(void) {
-  clock_init();
-  SystemCoreClockUpdate(); // Update the internal clock frequency variable
+/**
+ * @brief  Main program
+ * @param  None
+ * @retval None
+ */
+int main(void) {
 
-  RCC->AHB1ENR |= (1 << RCC_AHB1ENR_GPIOAEN_Pos);
+  TaskHandle_t Task1_handle;
 
-  GPIOA->MODER |= (1 << GPIO_MODER_MODER5_Pos);
+  BaseType_t status;
 
-  SysTick_Config(100000);
-  __enable_irq();
+  /* STM32F4xx HAL library initialization:
+  - Configure the Flash prefetch and Buffer caches
+  - Systick timer is configured by default as source of time base, but user
+  can eventually implement his proper time base source (a general purpose
+  timer for example or other time source), keeping in mind that Time base
+  duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and
+  handled in milliseconds basis.
+  - Low Level Initialization
+  */
+  HAL_Init();
 
-  usart_init(USART2);
+  /* Configure the system clock to 100 MHz */
+  SystemClock_Config();
 
+  /* Add your application code here
+   */
+
+  GPIO_Init();
+
+  status =
+      xTaskCreate(task1_handler, "LED Toggle", 200, NULL, 3, &Task1_handle);
+
+  configASSERT(status == pdPASS);
+
+  vTaskStartScheduler();
+
+  /* Infinite loop */
   while (1) {
-    GPIOA->ODR ^= (1 << LED_PIN);
-    for (uint32_t i = 0; i < 1000000; i++)
-      ;
-    printf("Hello, World!\n");
   }
 }
 
-void clock_init() {
-  /* By default HSI (16 MHz RC oscillator) is selected as system clock.
-   * We want to use the HSE (8 MHz MCO from ST-LINK connected to OSC_IN)
-   * through the PLL to get 100 MHz system clock.
-   */
+/**
+ * @brief  System Clock Configuration
+ *         The system Clock is configured as follow :
+ *            System Clock source            = PLL (HSI)
+ *            SYSCLK(Hz)                     = 100000000
+ *            HCLK(Hz)                       = 100000000
+ *            AHB Prescaler                  = 1
+ *            APB1 Prescaler                 = 2
+ *            APB2 Prescaler                 = 1
+ *            HSI Frequency(Hz)              = 16000000
+ *            PLL_M                          = 16
+ *            PLL_N                          = 200
+ *            PLL_P                          = 2
+ *            PLL_Q                          = 7
+ *            PLL_R                          = 2
+ *            VDD(V)                         = 3.3
+ *            Main regulator output voltage  = Scale1 mode
+ *            Flash Latency(WS)              = 5
+ * @param  None
+ * @retval None
+ */
+static void SystemClock_Config(void) {
+  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_OscInitTypeDef RCC_OscInitStruct;
 
-  // Enable power controller and set voltage scale mode 1
-  RCC->APB1ENR |= RCC_APB1ENR_PWREN_Msk;
-  volatile uint32_t dummy;
-  dummy = RCC->APB1ENR;
-  dummy = RCC->APB1ENR;
-  PWR->CR |= (0b11 << PWR_CR_VOS_Pos);
+  /* Enable Power Control clock */
+  __HAL_RCC_PWR_CLK_ENABLE();
 
-  // Configure flash controller for 3V3 supply and 100 MHz -> 3 wait states
-  FLASH->ACR |= FLASH_ACR_LATENCY_3WS;
+  /* The voltage scaling allows optimizing the power consumption when the device
+     is clocked below the maximum system frequency, to update the voltage
+     scaling value regarding system frequency refer to product datasheet.  */
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  // Set HSE bypass (to use external clock on OSC_IN, not a crystal) and enable
-  // HSE
-  RCC->CR |= RCC_CR_HSEBYP_Msk | RCC_CR_HSEON_Msk;
-  while (!(RCC->CR & RCC_CR_HSERDY_Msk))
-    ;
+  /* Enable HSI Oscillator and activate PLL with HSI as source */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = 0x10;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 16;
+  RCC_OscInitStruct.PLL.PLLN = 200;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = 7;
+  RCC_OscInitStruct.PLL.PLLR = 2;
 
-  // Configure PLL dividers and multiplier
-  /* Input to PLL should be 1-2 MHz (preferably 2 MHz). Choosing M=4 gives
-   * us 8 MHz / 4 = 2 MHz.
-   * The output of the PLL should be 100-438 MHz, so setting the feedback
-   * multiplier to 200 gives us 2 MHz * 200 = 400 MHz.
-   * The system clock should be 100 MHz. Choosing P=4 gives us
-   * 400 MHz / 4 = 100 MHz
-   *
-   * Since APB1 clock must not be more than 50 MHz, set the PPRE1 divider to 2.
-   */
-  // Clear PLLM, PLLN and PLLP bits
-  RCC->PLLCFGR &=
-      ~(RCC_PLLCFGR_PLLM_Msk | RCC_PLLCFGR_PLLN_Msk | RCC_PLLCFGR_PLLP_Msk);
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+    Error_Handler();
+  }
 
-  // Set PLLM, PLLN and PLLP, and select HSE as PLL source
-  RCC->PLLCFGR |= ((4 << RCC_PLLCFGR_PLLM_Pos) | (200 << RCC_PLLCFGR_PLLN_Pos) |
-                   (1 << RCC_PLLCFGR_PLLP_Pos) | (1 << RCC_PLLCFGR_PLLSRC_Pos));
-
-  // Set APB1 prescaler to 2
-  RCC->CFGR |= (0b100 << RCC_CFGR_PPRE1_Pos);
-
-  // Enable PLL and wait for ready
-  RCC->CR |= RCC_CR_PLLON_Msk;
-  while (!(RCC->CR & RCC_CR_PLLRDY_Msk))
-    ;
-
-  // Select PLL output as system clock
-  RCC->CFGR |= (RCC_CFGR_SW_PLL << RCC_CFGR_SW_Pos);
-  while (!(RCC->CFGR & RCC_CFGR_SWS_PLL))
-    ;
+  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
+     clocks dividers */
+  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK |
+                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
+    Error_Handler();
+  }
 }
 
-void systick_handler() { ticks++; }
+static void GPIO_Init(void) {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  HAL_GPIO_WritePin(GPIOA, LED, GPIO_PIN_RESET);
+
+  GPIO_InitStruct.Pin = LED;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}
+
+void task1_handler(void *parameters) {
+
+  while (1) {
+    HAL_GPIO_TogglePin(GPIOA, LED);
+    vTaskDelay(pdMS_TO_TICKS(250));
+  }
+}
+
+static void Error_Handler(void) {
+  /* User may add here some code to deal with this error */
+  while (1) {
+  }
+}
+
+#ifdef USE_FULL_ASSERT
+
+/**
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
+void assert_failed(uint8_t *file, uint32_t line) {
+  /* User can add his own implementation to report the file name and line
+     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
+     line) */
+
+  /* Infinite loop */
+  while (1) {
+  }
+}
+#endif
+
+/**
+ * @}
+ */
+
+/**
+ * @}
+ */
