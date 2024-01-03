@@ -8,7 +8,7 @@
     "editor.detectIndentation": true,
     "editor.wordWrap": "on",
     "editor.codeActionsOnSave": {
-        "source.fixAll": true
+        "source.fixAll": "explicit"
     },
     "tasks.autoDetect": "on",
     "tasks.json": {
@@ -19,7 +19,8 @@
     "files.associations": {
         "*.md": "markdown",
         "stm32f4xx_hal.h": "c",
-        "stm32f4xx_hal_conf.h": "c"
+        "stm32f4xx_hal_conf.h": "c",
+        "main.h": "c"
     },
     "editor.formatOnSave": true
 }

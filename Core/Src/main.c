@@ -35,11 +35,14 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+UART_HandleTypeDef huart2;
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 static void Error_Handler(void);
 static void GPIO_Init(void);
-static void task1_handler(void *parameters);
+static void USART2_Init(void);
+static void Led_Toggle_handler(void *parameters);
+static void Print_Msg_handler(void *parameters);
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -50,6 +53,7 @@ static void task1_handler(void *parameters);
 int main(void) {
 
   TaskHandle_t Task1_handle;
+  TaskHandle_t Task2_handle;
 
   BaseType_t status;
 
@@ -72,8 +76,15 @@ int main(void) {
 
   GPIO_Init();
 
+  USART2_Init();
+
+  status = xTaskCreate(Led_Toggle_handler, "LED Toggle", 200, NULL, 3,
+                       &Task1_handle);
+
+  configASSERT(status == pdPASS);
+
   status =
-      xTaskCreate(task1_handler, "LED Toggle", 200, NULL, 3, &Task1_handle);
+      xTaskCreate(Print_Msg_handler, "Print Msg", 200, NULL, 3, &Task2_handle);
 
   configASSERT(status == pdPASS);
 
@@ -129,25 +140,24 @@ static void SystemClock_Config(void) {
   RCC_OscInitStruct.PLL.PLLQ = 7;
   RCC_OscInitStruct.PLL.PLLR = 2;
 
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-    Error_Handler();
-  }
+  HAL_RCC_OscConfig(&RCC_OscInitStruct);
 
-  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
-     clocks dividers */
+  /* Select PLL as system clock source and configure the HCLK, PCLK1 and
+     PCLK2 clocks dividers */
   RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK |
                                  RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
-    Error_Handler();
-  }
+  HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
 }
 
+/**
+ * GPIO configuration
+ */
 static void GPIO_Init(void) {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitTypeDef GPIO_InitStruct;
 
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
@@ -158,13 +168,48 @@ static void GPIO_Init(void) {
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 }
 
-void task1_handler(void *parameters) {
+/**
+ * USART 2 Init for comunication
+ */
+static void USART2_Init(void) {
+  __USART2_CLK_ENABLE();
+
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  HAL_UART_Init(&huart2);
+}
+
+/**
+ * Tasks
+ */
+void Led_Toggle_handler(void *parameters) {
 
   while (1) {
     HAL_GPIO_TogglePin(GPIOA, LED);
     vTaskDelay(pdMS_TO_TICKS(250));
+  }
+}
+
+void Print_Msg_handler(void *parameters) {
+
+  while (1) {
+    printf("Hello, World!\n");
+    vTaskDelay(pdMS_TO_TICKS(5000));
   }
 }
 
@@ -173,31 +218,3 @@ static void Error_Handler(void) {
   while (1) {
   }
 }
-
-#ifdef USE_FULL_ASSERT
-
-/**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
-void assert_failed(uint8_t *file, uint32_t line) {
-  /* User can add his own implementation to report the file name and line
-     number, ex: printf("Wrong parameters value: file %s on line %d\r\n", file,
-     line) */
-
-  /* Infinite loop */
-  while (1) {
-  }
-}
-#endif
-
-/**
- * @}
- */
-
-/**
- * @}
- */
